@@ -36,7 +36,7 @@ def update_addresses(addresses, prefix_mask):
 
 # IP アドレスのステータスを更新
 def update_address(ipy_address, prefix_mask = "24"):
-    print(ipy_address, prefix_mask)
+    print(ipy_address.strNormal() + '/' + str(prefix_mask))
 
     ip = ipy_address.strNormal()
     updated = False
