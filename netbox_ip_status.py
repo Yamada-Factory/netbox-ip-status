@@ -35,6 +35,7 @@ def update_addresses(addresses, prefix_mask):
         update_address(address, prefix_mask)
 
 # IP アドレスのステータスを更新
+# TODO: 状態チェックとNetboxへの登録は別々に行う
 def update_address(ipy_address, prefix_mask = "24"):
     print(ipy_address.strNormal() + '/' + str(prefix_mask))
 
