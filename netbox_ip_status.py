@@ -48,6 +48,7 @@ def update_address(ipy_address, prefix_mask = "24"):
 
         if address is not None:
             if ping_result.is_alive:
+                print(ip + " -> " + str(ping_result.is_alive))
                 # MEMO: deprecated / reserved の時に ping が通るようになった場合、status を active に戻す
                 if address.status in {'deprecated', 'reserved'}:
                     address.status = 'active'
