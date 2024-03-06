@@ -28,6 +28,6 @@ services:
 
 ```bash
 $ git clone git@github.com/Yamada-Factory/netbox-ip-status.git && cd netbox-ip-status
-$ cp .env.sample .env // edit .env
+$ cp .env.sample .env # edit .env
 $ python netbox-ip-status.py
 ```
