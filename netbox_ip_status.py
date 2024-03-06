@@ -6,6 +6,8 @@ import datetime
 import socket
 from IPy import IP
 
+from logger import logger
+
 # create netbox session
 netbox_session = requests.Session()
 nb = pynetbox.api(
@@ -37,7 +39,7 @@ def update_addresses(addresses, prefix_mask):
 # IP アドレスのステータスを更新
 # TODO: 状態チェックとNetboxへの登録は別々に行う
 def update_address(ipy_address, prefix_mask = "24"):
-    print(ipy_address.strNormal() + '/' + str(prefix_mask))
+    logger.info(ipy_address.strNormal() + '/' + str(prefix_mask))
 
     ip = ipy_address.strNormal()
     updated = False
@@ -48,7 +50,7 @@ def update_address(ipy_address, prefix_mask = "24"):
 
         if address is not None:
             if ping_result.is_alive:
-                print(ip + " -> " + str(ping_result.is_alive))
+                logger.info(ip + " -> " + str(ping_result.is_alive))
                 # MEMO: deprecated / reserved の時に ping が通るようになった場合、status を active に戻す
                 if address.status in {'deprecated', 'reserved'}:
                     address.status = 'active'
@@ -56,6 +58,7 @@ def update_address(ipy_address, prefix_mask = "24"):
 
                     updated = True
             else:
+                logger.info(address.status.value)
                 # address が登録されてて、かつ ping が通らないときかつ status が deprecated or reserved 以外のとき
                 if address.status not in {'deprecated', 'reserved'}:
                     address.status = 'deprecated'
@@ -65,9 +68,10 @@ def update_address(ipy_address, prefix_mask = "24"):
 
             if updated:
                 address.save()
+                logger.info('Updated: ' + ip + ' -> ' + address.status)
 
         elif ping_result.is_alive:
-            print(ip + " -> " + str(ping_result.is_alive))
+            logger.info(ip + " -> " + str(ping_result.is_alive))
             # The address does not currently exist in Netbox, so lets add a reservation so somebody does not re-use it.
             new_address = {
                 "address": ipy_address.strNormal(1) + "/" + str(prefix_mask),
@@ -78,9 +82,10 @@ def update_address(ipy_address, prefix_mask = "24"):
             if rev is not None:
                 new_address["dns_name"] = rev
             nb.ipam.ip_addresses.create(new_address)
+            logger.info('Created: ' + ip + ' -> ' + 'active')
     except ValueError as e:
         # Lets just go to the next one
-        print(e)
+        logger.error(e)
 
 for prefix in prefixes:
     prefix_ip_object = IP(prefix.prefix)
