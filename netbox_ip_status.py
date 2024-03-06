@@ -58,7 +58,6 @@ def update_address(ipy_address, prefix_mask = "24"):
 
                     updated = True
             else:
-                logger.info(address.status.value)
                 # address が登録されてて、かつ ping が通らないときかつ status が deprecated or reserved 以外のとき
                 if address.status not in {'deprecated', 'reserved'}:
                     address.status = 'deprecated'
