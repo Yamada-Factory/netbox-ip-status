@@ -23,6 +23,9 @@ jobs:
       cancel-in-progress: true
 
     steps:
+      - name: lowercase the IMAGE_NAME
+        run: echo IMAGE_NAME="${IMAGE_NAME,,}" >> $GITHUB_ENV
+
       - name: Check out code
         uses: actions/checkout@v4
 
