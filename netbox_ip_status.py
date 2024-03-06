@@ -52,14 +52,14 @@ def update_address(ipy_address, prefix_mask = "24"):
             if ping_result.is_alive:
                 logger.info(ip + " -> " + str(ping_result.is_alive))
                 # MEMO: deprecated / reserved の時に ping が通るようになった場合、status を active に戻す
-                if address.status in {'deprecated', 'reserved'}:
+                if address.status.value in {'deprecated', 'reserved'}:
                     address.status = 'active'
                     address.description = 'Updated at ' + today + '. ' + address.description
 
                     updated = True
             else:
                 # address が登録されてて、かつ ping が通らないときかつ status が deprecated or reserved 以外のとき
-                if address.status not in {'deprecated', 'reserved'}:
+                if address.status.value not in {'deprecated', 'reserved'}:
                     address.status = 'deprecated'
                     address.description = 'Updated at ' + today + '. ' + address.description
 
