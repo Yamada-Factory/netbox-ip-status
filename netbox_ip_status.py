@@ -77,7 +77,6 @@ def update_address(ipy_address, prefix_mask = "24"):
             if rev is not None:
                 new_address["dns_name"] = rev
             nb.ipam.ip_addresses.create(new_address)
-            address = nb.ipam.ip_addresses.get(address=ipy_address.strNormal(1))
     except ValueError as e:
         # Lets just go to the next one
         print(e)
