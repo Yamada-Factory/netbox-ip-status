@@ -1,0 +1,5 @@
+services:
+  netbox-ip-status:
+    build: .
+    env_file:
+      - .env
