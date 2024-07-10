@@ -14,8 +14,6 @@ $ docker run -e NETBOX_API_KEY="mofumofu" -e NETBOX_URL="http://netbox.example.c
 .env.sample を .env にコピーして編集
 
 ```yml
-versions: '3'
-
 services:
   netbox-ip-status:
     image: ghcr.io/yamada-factory/netbox-ip-status:latest
