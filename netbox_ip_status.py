@@ -8,6 +8,13 @@ from IPy import IP
 
 from logger import logger
 
+from enum import Enum
+
+class NetboxStatus(Enum):
+    ACTIVE = 'active'
+    DEPRECATED = 'deprecated'
+    RESERVED = 'reserved'
+
 # create netbox session
 netbox_session = requests.Session()
 nb = pynetbox.api(
@@ -52,15 +59,15 @@ def update_address(ipy_address, prefix_mask = "24"):
             if ping_result.is_alive:
                 logger.info(ip + " -> " + str(ping_result.is_alive))
                 # MEMO: deprecated / reserved の時に ping が通るようになった場合、status を active に戻す
-                if address.status.value in {'deprecated', 'reserved'}:
-                    address.status = 'active'
+                if address.status.value in {NetboxStatus.DEPRECATED.value, NetboxStatus.RESERVED.value}:
+                    address.status = NetboxStatus.ACTIVE.value
                     address.comments = 'Updated at ' + today + '.\n' + address.comments
 
                     updated = True
             else:
                 # address が登録されてて、かつ ping が通らないときかつ status が deprecated or reserved 以外のとき
-                if address.status.value not in {'deprecated', 'reserved'}:
-                    address.status = 'deprecated'
+                if address.status.value not in {NetboxStatus.DEPRECATED.value, NetboxStatus.RESERVED.value}:
+                    address.status = NetboxStatus.DEPRECATED.value
                     address.comments = 'Updated at ' + today + '.\n' + address.comments
 
                     updated = True
@@ -76,7 +83,7 @@ def update_address(ipy_address, prefix_mask = "24"):
                 "address": ipy_address.strNormal(1) + "/" + str(prefix_mask),
                 "tags": [
                 ],
-                "status": "active",
+                "status": NetboxStatus.ACTIVE.value,
             }
             if rev is not None:
                 new_address["dns_name"] = rev
