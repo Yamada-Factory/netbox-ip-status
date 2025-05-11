@@ -1,15 +1,24 @@
-import asyncio
 import config
 import pynetbox
 import requests
-from icmplib import ping, async_ping
 import datetime
 import socket
 from IPy import IP
-
+from concurrent.futures import ThreadPoolExecutor
 from logger import logger
-
 from enum import Enum
+from scapy.all import ARP, Ether, srp
+
+def check_ip_use(ip):
+    arp_request = ARP(pdst=ip)
+    broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
+    arp_request_broadcast = broadcast / arp_request
+    answered_list = srp(arp_request_broadcast, timeout=2, verbose=False)[0]
+
+    logger.debug("ARP request: " + str(arp_request_broadcast))
+    logger.debug("ARP response: " + str(answered_list))
+
+    return len(answered_list) > 0
 
 class NetboxStatus(Enum):
     ACTIVE = 'active'
@@ -40,29 +49,32 @@ def reverse_lookup(ip):
         return None
 
 # IP アドレスのステータスを更新
-async def update_addresses(addresses, prefix_mask):
-    # with ThreadPoolExecutor(max_workers=config.MAX_WORKERS, thread_name_prefix="ping address") as executor:
-    #     executor.map(lambda address: update_address(address, prefix_mask), addresses)
-    async for address in addresses:
-        # update_address(address, prefix_mask)
-        asyncio.run(update_address(address, prefix_mask))
+def update_addresses(addresses, prefix_mask):
+    with ThreadPoolExecutor(max_workers=config.MAX_WORKERS, thread_name_prefix="ping address") as executor:
+        executor.map(lambda address: update_address(address, prefix_mask), addresses)
+    # for address in addresses:
+    #     update_address(address, prefix_mask)
 
 # IP アドレスのステータスを更新
 # TODO: 状態チェックとNetboxへの登録は別々に行う
-async def update_address(ipy_address, prefix_mask = "24"):
+def update_address(ipy_address, prefix_mask = "24"):
     logger.info(ipy_address.strNormal() + '/' + str(prefix_mask))
 
     ip = ipy_address.strNormal()
     updated = False
     try:
+        logger.debug('Checking: ' + ip)
         # ping_result = ping(address=ip, timeout=0.5, interval=1, count=3)
-        ping_result = await async_ping(address=ip, timeout=0.5, interval=1, count=3)
+        is_alive_ip = check_ip_use(ip)
+        # ping_result = async_ping(address=ip, timeout=0.5, interval=1, count=3)
         rev = reverse_lookup(ip)
         address = nb.ipam.ip_addresses.get(address=ipy_address.strNormal(1))
 
         if address is not None:
-            if ping_result.is_alive:
-                logger.info(ip + " -> " + str(ping_result.is_alive))
+            logger.debug('Found: ' + ip + ' -> ' + address.status)
+
+            if is_alive_ip:
+                logger.info(ip + " -> " + str(is_alive_ip))
                 # MEMO: deprecated / reserved の時に ping が通るようになった場合、status を active に戻す
                 if address.status.value in {NetboxStatus.DEPRECATED.value, NetboxStatus.RESERVED.value}:
                     address.status = NetboxStatus.ACTIVE.value
@@ -81,8 +93,8 @@ async def update_address(ipy_address, prefix_mask = "24"):
                 address.save()
                 logger.info('Updated: ' + ip + ' -> ' + address.status)
 
-        elif ping_result.is_alive:
-            logger.info(ip + " -> " + str(ping_result.is_alive))
+        elif is_alive_ip:
+            logger.info(ip + " -> " + str(is_alive_ip))
             # The address does not currently exist in Netbox, so lets add a reservation so somebody does not re-use it.
             new_address = {
                 "address": ipy_address.strNormal(1) + "/" + str(prefix_mask),
@@ -101,4 +113,4 @@ async def update_address(ipy_address, prefix_mask = "24"):
 for prefix in prefixes:
     prefix_ip_object = IP(prefix.prefix)
     prefix_mask = prefix.prefix.split("/")[1]
-    asyncio.run(update_addresses(prefix_ip_object, prefix_mask))
+    update_addresses(prefix_ip_object, prefix_mask)
