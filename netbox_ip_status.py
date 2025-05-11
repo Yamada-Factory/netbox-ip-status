@@ -43,7 +43,7 @@ def reverse_lookup(ip):
 async def update_addresses(addresses, prefix_mask):
     # with ThreadPoolExecutor(max_workers=config.MAX_WORKERS, thread_name_prefix="ping address") as executor:
     #     executor.map(lambda address: update_address(address, prefix_mask), addresses)
-    for address in addresses:
+    async for address in addresses:
         # update_address(address, prefix_mask)
         asyncio.run(update_address(address, prefix_mask))
 
@@ -101,4 +101,4 @@ async def update_address(ipy_address, prefix_mask = "24"):
 for prefix in prefixes:
     prefix_ip_object = IP(prefix.prefix)
     prefix_mask = prefix.prefix.split("/")[1]
-    update_addresses(prefix_ip_object, prefix_mask)
+    asyncio.run(update_addresses(prefix_ip_object, prefix_mask))
