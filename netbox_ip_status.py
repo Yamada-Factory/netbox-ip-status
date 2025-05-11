@@ -5,6 +5,7 @@ from icmplib import ping
 import datetime
 import socket
 from IPy import IP
+from concurrent.futures import ThreadPoolExecutor
 
 from logger import logger
 
@@ -40,8 +41,10 @@ def reverse_lookup(ip):
 
 # IP アドレスのステータスを更新
 def update_addresses(addresses, prefix_mask):
-    for address in addresses:
-        update_address(address, prefix_mask)
+    with ThreadPoolExecutor(max_workers=config.MAX_WORKERS, thread_name_prefix="ping address") as executor:
+        executor.map(lambda address: update_address(address, prefix_mask), addresses)
+    # for address in addresses:
+    #     update_address(address, prefix_mask)
 
 # IP アドレスのステータスを更新
 # TODO: 状態チェックとNetboxへの登録は別々に行う
