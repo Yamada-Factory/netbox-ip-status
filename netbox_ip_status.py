@@ -1,11 +1,11 @@
+import asyncio
 import config
 import pynetbox
 import requests
-from icmplib import ping
+from icmplib import ping, async_ping
 import datetime
 import socket
 from IPy import IP
-from concurrent.futures import ThreadPoolExecutor
 
 from logger import logger
 
@@ -41,20 +41,22 @@ def reverse_lookup(ip):
 
 # IP アドレスのステータスを更新
 def update_addresses(addresses, prefix_mask):
-    with ThreadPoolExecutor(max_workers=config.MAX_WORKERS, thread_name_prefix="ping address") as executor:
-        executor.map(lambda address: update_address(address, prefix_mask), addresses)
-    # for address in addresses:
-    #     update_address(address, prefix_mask)
+    # with ThreadPoolExecutor(max_workers=config.MAX_WORKERS, thread_name_prefix="ping address") as executor:
+    #     executor.map(lambda address: update_address(address, prefix_mask), addresses)
+    for address in addresses:
+        # update_address(address, prefix_mask)
+        asyncio.run(update_address(address, prefix_mask))
 
 # IP アドレスのステータスを更新
 # TODO: 状態チェックとNetboxへの登録は別々に行う
-def update_address(ipy_address, prefix_mask = "24"):
+async def update_address(ipy_address, prefix_mask = "24"):
     logger.info(ipy_address.strNormal() + '/' + str(prefix_mask))
 
     ip = ipy_address.strNormal()
     updated = False
     try:
-        ping_result = ping(address=ip, timeout=0.5, interval=1, count=3)
+        # ping_result = ping(address=ip, timeout=0.5, interval=1, count=3)
+        ping_result = await async_ping(address=ip, timeout=0.5, interval=1, count=3)
         rev = reverse_lookup(ip)
         address = nb.ipam.ip_addresses.get(address=ipy_address.strNormal(1))
 

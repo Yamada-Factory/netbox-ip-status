@@ -8,5 +8,3 @@ NETBOX_URL = os.getenv("NETBOX_URL")
 PREFIX_TAG = os.getenv("NETBOX_PREFIX_TAG")
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
-
-MAX_WORKERS = int(os.getenv("MAX_WORKERS", 10))
