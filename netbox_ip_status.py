@@ -40,7 +40,7 @@ def reverse_lookup(ip):
         return None
 
 # IP アドレスのステータスを更新
-def update_addresses(addresses, prefix_mask):
+async def update_addresses(addresses, prefix_mask):
     # with ThreadPoolExecutor(max_workers=config.MAX_WORKERS, thread_name_prefix="ping address") as executor:
     #     executor.map(lambda address: update_address(address, prefix_mask), addresses)
     for address in addresses:
