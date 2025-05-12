@@ -41,10 +41,6 @@ def scan_network(ip_range):
 
     return devices
 
-# ネットワークをスキャン
-ip_range = '172.26.26.0/24'  # 自分のネットワークに合わせてください
-scan_network(ip_range)
-
 class NetboxStatus(Enum):
     ACTIVE = 'active'
     DEPRECATED = 'deprecated'
