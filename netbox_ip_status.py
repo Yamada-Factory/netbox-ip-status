@@ -71,7 +71,7 @@ def reverse_lookup(ip):
 
 # IP アドレスのステータスを更新
 def update_addresses(addresses, prefix_mask):
-    devices = scan_network(addresses.strNormal() + '/' + str(prefix_mask))
+    devices = scan_network(addresses.strNormal())
     if len(devices) == 0:
         logger.info("No devices found in the network.")
 
