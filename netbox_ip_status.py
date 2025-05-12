@@ -98,7 +98,7 @@ def update_address(ipy_address, prefix_mask = "24", devices = list()):
         logger.debug('Device result: ' + str(is_alive_ip))
 
         if address is not None:
-            logger.debug('Found: ' + ip + ' -> ' + address.status)
+            logger.debug('Found: ' + ip + ' -> ' + address.status.value)
 
             if is_alive_ip:
                 logger.info(ip + " -> " + str(is_alive_ip))
