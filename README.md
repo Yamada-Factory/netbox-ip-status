@@ -24,6 +24,11 @@ services:
 
 ### プログラムをそのまま実行する方法
 
+#### arp install
+ggrks
+
+#### Run
+
 ```bash
 $ git clone git@github.com/Yamada-Factory/netbox-ip-status.git && cd netbox-ip-status
 $ cp .env.sample .env # edit .env
