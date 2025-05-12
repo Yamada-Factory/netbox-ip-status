@@ -4,21 +4,46 @@ import requests
 import datetime
 import socket
 from IPy import IP
-from concurrent.futures import ThreadPoolExecutor
 from logger import logger
 from enum import Enum
-from scapy.all import ARP, Ether, srp
+import subprocess
 
-def check_ip_use(ip):
-    arp_request = ARP(pdst=ip)
-    broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
-    arp_request_broadcast = broadcast / arp_request
-    answered_list = srp(arp_request_broadcast, timeout=2, verbose=False)[0]
+def scan_network(ip_range):
+    try:
+        logger.info(f"Scanning network: {ip_range}")
+        # nmapコマンドを実行
+        result = subprocess.run(['nmap', '-sn', ip_range], stdout=subprocess.PIPE, text=True)
+        logger.debug("Nmap command: " + ' '.join(['nmap', '-sn', ip_range]))
+        logger.debug("Nmap command output: " + result.stdout)
 
-    logger.debug("ARP request: " + str(arp_request_broadcast))
-    logger.debug("ARP response: " + str(answered_list))
+        # IPアドレスを抽出
+        devices = []
+        for line in result.stdout.split('\n'):
+            if "Nmap scan report for" in line:
+                ip = line.split(' ')[-1] # IPは行末にある
 
-    return len(answered_list) > 0
+                # 数字と. 以外の文字を削除
+                ip = ''.join(filter(lambda x: x.isdigit() or x == '.', ip))
+
+                # IPアドレスの形式を確認
+                if IP(ip).iptype() == 'PUBLIC' or IP(ip).iptype() == 'PRIVATE':
+                    devices.append(ip)
+                else:
+                    logger.warning(f"Invalid IP address format: {ip}")
+
+        # IPアドレス一覧を表示
+        logger.info(f"{len(devices)} devices found:")
+        for ip in devices:
+            logger.info(ip)
+
+    except Exception as e:
+        logger.error(f"IP Scan Error: {e}")
+
+    return devices
+
+# ネットワークをスキャン
+ip_range = '172.26.26.0/24'  # 自分のネットワークに合わせてください
+scan_network(ip_range)
 
 class NetboxStatus(Enum):
     ACTIVE = 'active'
@@ -50,25 +75,27 @@ def reverse_lookup(ip):
 
 # IP アドレスのステータスを更新
 def update_addresses(addresses, prefix_mask):
-    with ThreadPoolExecutor(max_workers=config.MAX_WORKERS, thread_name_prefix="ping address") as executor:
-        executor.map(lambda address: update_address(address, prefix_mask), addresses)
-    # for address in addresses:
-    #     update_address(address, prefix_mask)
+    devices = scan_network(addresses.strNormal() + '/' + str(prefix_mask))
+    if len(devices) == 0:
+        logger.info("No devices found in the network.")
+
+    for address in addresses:
+        update_address(address, prefix_mask, devices)
 
 # IP アドレスのステータスを更新
 # TODO: 状態チェックとNetboxへの登録は別々に行う
-def update_address(ipy_address, prefix_mask = "24"):
+def update_address(ipy_address, prefix_mask = "24", devices = list()):
     logger.info(ipy_address.strNormal() + '/' + str(prefix_mask))
 
     ip = ipy_address.strNormal()
     updated = False
     try:
         logger.debug('Checking: ' + ip)
-        # ping_result = ping(address=ip, timeout=0.5, interval=1, count=3)
-        is_alive_ip = check_ip_use(ip)
-        # ping_result = async_ping(address=ip, timeout=0.5, interval=1, count=3)
         rev = reverse_lookup(ip)
         address = nb.ipam.ip_addresses.get(address=ipy_address.strNormal(1))
+
+        is_alive_ip = ipy_address.strNormal() in devices
+        logger.debug('Device result: ' + str(is_alive_ip))
 
         if address is not None:
             logger.debug('Found: ' + ip + ' -> ' + address.status)

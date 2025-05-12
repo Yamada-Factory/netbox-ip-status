@@ -1,5 +1,5 @@
 pynetbox
 requests
-icmplib
 IPy
 python_dotenv
+
