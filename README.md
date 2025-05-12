@@ -1,6 +1,6 @@
 # netbox-ip-status
-arpテーブルを見て存在してるIPをNetboxへ記録するツール  
-※ PINGを利用した方式は存在しないIPなどを検知したりしたのでARPに移行しました
+nmapを使って存在してるIPをNetboxへ記録するツール  
+※ PINGを利用した方式は存在しないIPなどを検知したりしたのでnmapに移行しました
 
 
 ## How to use
@@ -25,7 +25,7 @@ services:
 
 ### プログラムをそのまま実行する方法
 
-#### arp install
+#### nmap install
 ggrks
 
 #### Run
