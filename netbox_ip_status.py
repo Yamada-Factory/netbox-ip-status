@@ -7,21 +7,26 @@ from IPy import IP
 from logger import logger
 from enum import Enum
 import subprocess
+import xml2dict
+import xml.etree.ElementTree as ET
 
 def scan_network(ip_range):
     try:
         logger.info(f"Scanning network: {ip_range}")
         # nmapコマンドを実行
-        result = subprocess.run(['nmap', '-sn', ip_range], stdout=subprocess.PIPE, text=True)
-        logger.debug("Nmap command: " + ' '.join(['nmap', '-sn', ip_range]))
+        nmap_cmd = ['nmap', '-sn', '-oX', '-', ip_range]
+        logger.debug("Nmap command: " + ' '.join(nmap_cmd))
+        result = subprocess.run(nmap_cmd, stdout=subprocess.PIPE, text=True)
         logger.debug("Nmap command output: " + result.stdout)
 
-        # IPアドレスを抽出
-        devices = []
-        for line in result.stdout.split('\n'):
-            if "Nmap scan report for" in line:
-                ip = line.split(' ')[-1] # IPは行末にある
+        element = ET.fromstring(result.stdout)
+        nmap_result = xml2dict.xml_to_dict(element)
+        hosts = nmap_result['host']
 
+        devices = []
+        for host in hosts:
+            if 'address' in host:
+                ip = host['address']['addr']
                 # 数字と. 以外の文字を削除
                 ip = ''.join(filter(lambda x: x.isdigit() or x == '.', ip))
 
