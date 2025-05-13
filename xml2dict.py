@@ -16,7 +16,12 @@ def xml_to_dict(element):
     return node
 
 # if __name__ == "__main__":
-#     result = subprocess.run(['nmap', '-sn', '-oX', '-', '172.26.27.0/24'], stdout=subprocess.PIPE, text=True)
+#     import subprocess
+#     import xml.etree.ElementTree as ET
+#     import json
+
+#     cmd = ['nmap', '-v', '-sn', '-oX', '-', '192.168.0.0/24']
+#     result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
 #     element = ET.fromstring(result.stdout)
 #     # nmap.xml で 保存
 #     with open('nmap.xml', 'w') as f:
