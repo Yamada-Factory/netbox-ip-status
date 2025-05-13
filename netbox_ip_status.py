@@ -19,6 +19,7 @@ def scan_network(ip_range):
         result = subprocess.run(nmap_cmd, stdout=subprocess.PIPE, text=True)
         logger.debug("Nmap command output: " + result.stdout)
 
+
         element = ET.fromstring(result.stdout)
         nmap_result = xml2dict.xml_to_dict(element)
         hosts = nmap_result['host']
@@ -41,10 +42,10 @@ def scan_network(ip_range):
         for ip in devices:
             logger.info(ip)
 
+        return devices
     except Exception as e:
         logger.error(f"IP Scan Error: {e}")
-
-    return devices
+        raise e
 
 class NetboxStatus(Enum):
     ACTIVE = 'active'
