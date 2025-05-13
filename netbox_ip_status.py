@@ -79,14 +79,12 @@ def update_addresses(addresses, prefix_mask):
         update_address(address, prefix_mask, devices)
 
 # IP アドレスのステータスを更新
-# TODO: 状態チェックとNetboxへの登録は別々に行う
 def update_address(ipy_address, prefix_mask = "24", devices = list()):
     logger.info(ipy_address.strNormal() + '/' + str(prefix_mask))
 
     ip = ipy_address.strNormal()
     updated = False
     try:
-        logger.debug('Checking: ' + ip)
         rev = reverse_lookup(ip)
         address = nb.ipam.ip_addresses.get(address=ipy_address.strNormal(1))
 
