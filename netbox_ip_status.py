@@ -133,9 +133,9 @@ def update_address(ipy_address, prefix_mask = "24", devices = list()):
                 new_address["dns_name"] = rev
             nb.ipam.ip_addresses.create(new_address)
             logger.info('Created: ' + ip + ' -> ' + 'active')
-    except ValueError as e:
-        # Lets just go to the next one
-        logger.error(e)
+    except Exception as e:
+        logger.error(f"Error updating address {ipy_address}: {e}")
+        raise e
 
 for prefix in prefixes:
     prefix_ip_object = IP(prefix.prefix)
