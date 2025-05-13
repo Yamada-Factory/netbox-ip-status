@@ -14,7 +14,7 @@ def scan_network(ip_range):
     try:
         logger.info(f"Scanning network: {ip_range}")
         # nmapコマンドを実行
-        nmap_cmd = ['nmap', '-sn', '-oX', '-', ip_range]
+        nmap_cmd = ['nmap', '-v', '-sn', '-oX', '-', ip_range]
         logger.debug("Nmap command: " + ' '.join(nmap_cmd))
         result = subprocess.run(nmap_cmd, stdout=subprocess.PIPE, text=True)
         logger.debug("Nmap command output: " + result.stdout)
@@ -26,6 +26,12 @@ def scan_network(ip_range):
 
         devices = []
         for host in hosts:
+            if 'status' in host and host['status']['state'] == 'up':
+                logger.debug(f"Host is up: {host['address']['addr']}")
+            else:
+                logger.debug(f"Host is down: {host['address']['addr']}")
+                continue
+
             if 'address' in host:
                 ip = host['address']['addr']
                 # 数字と. 以外の文字を削除
