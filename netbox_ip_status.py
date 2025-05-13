@@ -14,7 +14,7 @@ def scan_network(ip_range):
     try:
         logger.info(f"Scanning network: {ip_range}")
         # nmapコマンドを実行
-        nmap_cmd = ['nmap', '-v', '-sn', '-oX', '-', ip_range]
+        nmap_cmd = ['nmap', '-v', '-sn', '-n', '-oX', '-', ip_range]
         logger.debug("Nmap command: " + ' '.join(nmap_cmd))
         result = subprocess.run(nmap_cmd, stdout=subprocess.PIPE, text=True)
         logger.debug("Nmap command output: " + result.stdout)

@@ -20,7 +20,8 @@ def xml_to_dict(element):
 #     import xml.etree.ElementTree as ET
 #     import json
 
-#     cmd = ['nmap', '-v', '-sn', '-oX', '-', '192.168.0.0/24']
+#     cmd = ['nmap', '-v', '-sn', '-n', '-oX', '-', '192.168.0.0/24']
+#     print("Nmap command: " + ' '.join(cmd))
 #     result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
 #     element = ET.fromstring(result.stdout)
 #     # nmap.xml で 保存
