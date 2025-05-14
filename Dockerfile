@@ -6,6 +6,9 @@ ENV NETBOX_PREFIX_TAG "mofumofu"
 
 WORKDIR /app
 
+# install nmap net-tools
+RUN apk add --no-cache net-tools nmap
+
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 

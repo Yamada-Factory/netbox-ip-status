@@ -1,12 +1,62 @@
 import config
 import pynetbox
 import requests
-from icmplib import ping
 import datetime
 import socket
 from IPy import IP
-
 from logger import logger
+from enum import Enum
+import subprocess
+import xml2dict
+import xml.etree.ElementTree as ET
+
+def scan_network(ip_range):
+    try:
+        logger.info(f"Scanning network: {ip_range}")
+        # nmapコマンドを実行
+        nmap_cmd = ['nmap', '-v', '-sn', '-n', '-oX', '-', ip_range]
+        logger.debug("Nmap command: " + ' '.join(nmap_cmd))
+        result = subprocess.run(nmap_cmd, stdout=subprocess.PIPE, text=True)
+        logger.debug("Nmap command output: " + result.stdout)
+
+
+        element = ET.fromstring(result.stdout)
+        nmap_result = xml2dict.xml_to_dict(element)
+        hosts = nmap_result['host']
+
+        devices = []
+        for host in hosts:
+            if 'status' in host and host['status']['state'] == 'up':
+                logger.debug(f"Host is up: {host['address']['addr']}")
+            else:
+                logger.debug(f"Host is down: {host['address']['addr']}")
+                continue
+
+            if 'address' in host:
+                ip = host['address']['addr']
+                # 数字と. 以外の文字を削除
+                ip = ''.join(filter(lambda x: x.isdigit() or x == '.', ip))
+
+                # IPアドレスの形式を確認
+                if IP(ip).iptype() == 'PUBLIC' or IP(ip).iptype() == 'PRIVATE':
+                    devices.append(ip)
+                else:
+                    logger.warning(f"Invalid IP address format: {ip}")
+
+        # IPアドレス一覧を表示
+        logger.info(f"{len(devices)} devices found:")
+        for ip in devices:
+            logger.info(ip)
+
+        return devices
+    except Exception as e:
+        logger.error(f"IP Scan Error: {e}")
+        raise e
+
+class NetboxStatus(Enum):
+    ACTIVE = 'active'
+    DEPRECATED = 'deprecated'
+    RESERVED = 'reserved'
 
 # create netbox session
 netbox_session = requests.Session()
@@ -33,34 +83,41 @@ def reverse_lookup(ip):
 
 # IP アドレスのステータスを更新
 def update_addresses(addresses, prefix_mask):
+    devices = scan_network(addresses.strNormal())
+    if len(devices) == 0:
+        logger.info("No devices found in the network.")
+
     for address in addresses:
-        update_address(address, prefix_mask)
+        update_address(address, prefix_mask, devices)
 
 # IP アドレスのステータスを更新
-# TODO: 状態チェックとNetboxへの登録は別々に行う
-def update_address(ipy_address, prefix_mask = "24"):
+def update_address(ipy_address, prefix_mask = "24", devices = list()):
     logger.info(ipy_address.strNormal() + '/' + str(prefix_mask))
 
     ip = ipy_address.strNormal()
     updated = False
     try:
-        ping_result = ping(address=ip, timeout=0.5, interval=1, count=3)
         rev = reverse_lookup(ip)
         address = nb.ipam.ip_addresses.get(address=ipy_address.strNormal(1))
 
+        is_alive_ip = ipy_address.strNormal() in devices
+        logger.debug('Device result: ' + str(is_alive_ip))
+
         if address is not None:
-            if ping_result.is_alive:
-                logger.info(ip + " -> " + str(ping_result.is_alive))
+            logger.debug('Found: ' + ip + ' -> ' + address.status.value)
+
+            if is_alive_ip:
+                logger.info(ip + " -> " + str(is_alive_ip))
                 # MEMO: deprecated / reserved の時に ping が通るようになった場合、status を active に戻す
-                if address.status.value in {'deprecated', 'reserved'}:
-                    address.status = 'active'
+                if address.status.value in {NetboxStatus.DEPRECATED.value, NetboxStatus.RESERVED.value}:
+                    address.status = NetboxStatus.ACTIVE.value
                     address.comments = 'Updated at ' + today + '.\n' + address.comments
 
                     updated = True
             else:
                 # address が登録されてて、かつ ping が通らないときかつ status が deprecated or reserved 以外のとき
-                if address.status.value not in {'deprecated', 'reserved'}:
-                    address.status = 'deprecated'
+                if address.status.value not in {NetboxStatus.DEPRECATED.value, NetboxStatus.RESERVED.value}:
+                    address.status = NetboxStatus.DEPRECATED.value
                     address.comments = 'Updated at ' + today + '.\n' + address.comments
 
                     updated = True
@@ -69,22 +126,22 @@ def update_address(ipy_address, prefix_mask = "24"):
                 address.save()
                 logger.info('Updated: ' + ip + ' -> ' + address.status)
 
-        elif ping_result.is_alive:
-            logger.info(ip + " -> " + str(ping_result.is_alive))
+        elif is_alive_ip:
+            logger.info(ip + " -> " + str(is_alive_ip))
             # The address does not currently exist in Netbox, so lets add a reservation so somebody does not re-use it.
             new_address = {
                 "address": ipy_address.strNormal(1) + "/" + str(prefix_mask),
                 "tags": [
                 ],
-                "status": "active",
+                "status": NetboxStatus.ACTIVE.value,
             }
             if rev is not None:
                 new_address["dns_name"] = rev
             nb.ipam.ip_addresses.create(new_address)
             logger.info('Created: ' + ip + ' -> ' + 'active')
-    except ValueError as e:
-        # Lets just go to the next one
-        logger.error(e)
+    except Exception as e:
+        logger.error(f"Error updating address {ipy_address}: {e}")
+        raise e
 
 for prefix in prefixes:
     prefix_ip_object = IP(prefix.prefix)

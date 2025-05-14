@@ -1,5 +1,6 @@
 # netbox-ip-status
-指定したネットワーク内のすべてのアドレスにPINGを送信し、応答があれば記録する ツール
+nmapを使って存在してるIPをNetboxへ記録するツール  
+※ PINGを利用した方式は存在しないIPなどを検知したりしたのでnmapに移行しました
 
 
 ## How to use
@@ -23,6 +24,11 @@ services:
 ```
 
 ### プログラムをそのまま実行する方法
+
+#### nmap install
+ggrks
+
+#### Run
 
 ```bash
 $ git clone git@github.com/Yamada-Factory/netbox-ip-status.git && cd netbox-ip-status
