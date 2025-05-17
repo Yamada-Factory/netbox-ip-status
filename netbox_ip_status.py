@@ -26,13 +26,19 @@ def scan_network(ip_range):
 
         devices = []
         for host in hosts:
-            if 'status' in host and host['status']['state'] == 'up':
-                logger.debug(f"Host is up: {host['address']['addr']}")
-            else:
-                logger.debug(f"Host is down: {host['address']['addr']}")
-                continue
+            if 'address' in host and 'status' in host:
+                # host['address] がリストかどうか確認
+                if isinstance(host['address'], list):
+                    for addr in host['address']:
+                        if addr['addrtype'] == 'ipv4':
+                            host['address'] = addr
 
-            if 'address' in host:
+                if host['status']['state'] == 'up':
+                    logger.debug(f"Host is up: {host['address']['addr']}")
+                else:
+                    logger.debug(f"Host is down: {host['address']['addr']}")
+                    continue
+
                 ip = host['address']['addr']
                 # 数字と. 以外の文字を削除
                 ip = ''.join(filter(lambda x: x.isdigit() or x == '.', ip))
