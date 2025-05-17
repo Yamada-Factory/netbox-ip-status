@@ -26,34 +26,55 @@ def scan_network(ip_range):
 
         devices = []
         for host in hosts:
-            if 'address' in host and 'status' in host:
-                # host['address'] がリストかどうか確認
-                if isinstance(host['address'], list):
-                    ipv4_address = None
-                    for addr in host['address']:
-                        if addr['addrtype'] == 'ipv4':
-                            ipv4_address = addr
-                            break
-                    host['address'] = ipv4_address if ipv4_address else None
+            host_address = host.get('address')
+            host_status = host.get('status')
 
-                if not isinstance(host['address'], dict):
-                    logger.warning("No valid IPv4 address found for host.")
-                    continue
-                if host['status']['state'] == 'up':
-                    logger.debug(f"Host is up: {host['address']['addr']}")
-                else:
-                    logger.debug(f"Host is down: {host['address']['addr']}")
-                    continue
+            if host_address is None or host_status is None:
+                logger.warning("No address or status found for host.")
+                continue
 
-                ip = host['address']['addr']
-                # 数字と. 以外の文字を削除
-                ip = ''.join(filter(lambda x: x.isdigit() or x == '.', ip))
+            # host_address がリストかどうか確認
+            if isinstance(host_address, list):
+                ipv4_address = None
+                for addr in host_address:
+                    if addr['addrtype'] == 'ipv4':
+                        ipv4_address = addr
+                        break
+                host_address = ipv4_address if ipv4_address else None
 
-                # IPアドレスの形式を確認
-                if IP(ip).iptype() == 'PUBLIC' or IP(ip).iptype() == 'PRIVATE':
-                    devices.append(ip)
-                else:
-                    logger.warning(f"Invalid IP address format: {ip}")
+            if not isinstance(host_address, dict):
+                logger.warning("No valid IPv4 address found for host.")
+                continue
+
+            host_address_addr = host_address.get('addr')
+            if host_address_addr is None:
+                logger.warning("No address found for host.")
+                continue
+
+            # 数字と. 以外の文字を削除
+            host_address_addr = ''.join(filter(lambda x: x.isdigit() or x == '.', host_address_addr))
+            # IPアドレスの形式を確認
+            if IP(host_address_addr).iptype() == 'PUBLIC' or IP(host_address_addr).iptype() == 'PRIVATE':
+                pass
+            else:
+                logger.warning(f"Invalid IP address format: {host_address_addr}")
+                continue
+
+            host_address_addrtype = host_address.get('addrtype')
+            if host_address_addrtype != 'ipv4' and host_address_addrtype != 'ipv6':
+                logger.warning("Address type is not IPv4 or IPv6.")
+                continue
+
+            host_status_state = host_status.get('state')
+            if host_status_state == 'up':
+                logger.debug(f"Host is up: {host_address_addr}")
+            else:
+                logger.debug(f"Host is down: {host_address_addr}")
+                continue
+
+            # IPアドレスをリストに追加
+            devices.append(host_address_addr)
+            logger.debug(f"Host address: {host_address_addr}")
 
         # IPアドレス一覧を表示
         logger.info(f"{len(devices)} devices found:")
