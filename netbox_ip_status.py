@@ -29,10 +29,16 @@ def scan_network(ip_range):
             if 'address' in host and 'status' in host:
                 # host['address] がリストかどうか確認
                 if isinstance(host['address'], list):
+                    ipv4_address = None
                     for addr in host['address']:
                         if addr['addrtype'] == 'ipv4':
-                            host['address'] = addr
+                            ipv4_address = addr
+                            break
+                    host['address'] = ipv4_address if ipv4_address else None
 
+                if not isinstance(host['address'], dict):
+                    logger.warning("No valid IPv4 address found for host.")
+                    continue
                 if host['status']['state'] == 'up':
                     logger.debug(f"Host is up: {host['address']['addr']}")
                 else:
