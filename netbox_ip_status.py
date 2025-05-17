@@ -54,9 +54,7 @@ def scan_network(ip_range):
             # 数字と. 以外の文字を削除
             host_address_addr = ''.join(filter(lambda x: x.isdigit() or x in '.:abcdefABCDEF', host_address_addr))
             # IPアドレスの形式を確認
-            if IP(host_address_addr).iptype() == 'PUBLIC' or IP(host_address_addr).iptype() == 'PRIVATE':
-                pass
-            else:
+            if IP(host_address_addr).iptype() != 'PUBLIC' and IP(host_address_addr).iptype() != 'PRIVATE':
                 logger.warning(f"Invalid IP address format: {host_address_addr}")
                 continue
 
