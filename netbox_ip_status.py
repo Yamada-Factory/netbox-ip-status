@@ -27,7 +27,7 @@ def scan_network(ip_range):
         devices = []
         for host in hosts:
             if 'address' in host and 'status' in host:
-                # host['address] がリストかどうか確認
+                # host['address'] がリストかどうか確認
                 if isinstance(host['address'], list):
                     ipv4_address = None
                     for addr in host['address']:
